@@ -1,587 +1,750 @@
-import { useState, useEffect } from "react";
-import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, Legend
-} from "recharts";
-import {
-  Trophy, TrendingUp, Users, Wallet, CreditCard, PiggyBank,
-  AlertTriangle, CheckCircle, ChevronUp, ChevronDown, Bell,
-  Download, Printer, Plus, Star, Award, Target, RefreshCw
-} from "lucide-react";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Great Sale BPR — PERBARINDO DPK Tegal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1a3a5c;
+    --navy2: #2a5a8c;
+    --gold: #f5a623;
+    --gold2: #d4891a;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --bg: #eef2f7;
+    --card: #ffffff;
+    --border: #dde3ed;
+    --muted: #64748b;
+    --text: #1e293b;
+    --font: 'Plus Jakarta Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; }
 
-const COLORS = {
-  navy: "#1a3a5c",
-  gold: "#f5a623",
-  lightNavy: "#2a5a8c",
-  darkGold: "#d4891a",
-  success: "#16a34a",
-  warning: "#dc2626",
-  bgLight: "#f0f4f8",
-  bgCard: "#ffffff",
-  muted: "#64748b",
-  border: "#e2e8f0",
-};
+  /* HEADER */
+  .header { background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%); padding: 0; }
+  .header-inner { max-width: 1200px; margin: 0 auto; padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .logo-wrap { display: flex; align-items: center; gap: 14px; }
+  .logo-icon { background: var(--gold); border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .logo-title { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+  .logo-sub { font-size: 11px; color: var(--gold); font-weight: 600; margin-top: 2px; }
+  .countdown { display: flex; gap: 6px; }
+  .cd-box { background: rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; text-align: center; min-width: 46px; }
+  .cd-num { font-size: 20px; font-weight: 800; color: var(--gold); display: block; line-height: 1; }
+  .cd-lbl { font-size: 9px; color: rgba(255,255,255,0.65); text-transform: uppercase; display: block; margin-top: 2px; }
 
-const formatRupiah = (n) =>
-  n >= 1_000_000_000
-    ? `Rp ${(n / 1_000_000_000).toFixed(1)}M`
-    : n >= 1_000_000
-    ? `Rp ${(n / 1_000_000).toFixed(0)}Jt`
-    : `Rp ${n.toLocaleString("id-ID")}`;
+  /* TABS */
+  .tabs-bar { background: rgba(0,0,0,0.28); overflow-x: auto; scrollbar-width: none; }
+  .tabs-bar::-webkit-scrollbar { display: none; }
+  .tabs-inner { max-width: 1200px; margin: 0 auto; display: flex; padding: 0 1.5rem; }
+  .tab-btn { padding: 11px 18px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; background: transparent; color: rgba(255,255,255,0.65); border-bottom: 3px solid transparent; transition: all .2s; font-family: var(--font); }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-btn:hover { color: #fff; }
 
-const initialBPRData = [
-  { id: 1, nama: "BPR Artha Galunggung", kota: "Kota Tegal", tabungan: 820_000_000, deposito: 1_400_000_000, kredit: 2_100_000_000, nasabah: 142 },
-  { id: 2, nama: "BPR Slawi Abadi", kota: "Slawi", tabungan: 760_000_000, deposito: 1_200_000_000, kredit: 1_850_000_000, nasabah: 128 },
-  { id: 3, nama: "BPR Dana Mandiri Tegal", kota: "Kota Tegal", tabungan: 680_000_000, deposito: 980_000_000, kredit: 1_620_000_000, nasabah: 109 },
-  { id: 4, nama: "BPR Brebes Sejahtera", kota: "Brebes", tabungan: 540_000_000, deposito: 870_000_000, kredit: 1_400_000_000, nasabah: 97 },
-  { id: 5, nama: "BPR Bahari Tegal", kota: "Kota Tegal", tabungan: 490_000_000, deposito: 720_000_000, kredit: 1_100_000_000, nasabah: 83 },
-  { id: 6, nama: "BPR Bumiayu Makmur", kota: "Bumiayu", tabungan: 420_000_000, deposito: 650_000_000, kredit: 980_000_000, nasabah: 71 },
-  { id: 7, nama: "BPR Kramat Jaya", kota: "Kramat, Tegal", tabungan: 350_000_000, deposito: 490_000_000, kredit: 820_000_000, nasabah: 58 },
-  { id: 8, nama: "BPR Adiwerna Berkah", kota: "Adiwerna", tabungan: 290_000_000, deposito: 380_000_000, kredit: 640_000_000, nasabah: 44 },
-  { id: 9, nama: "BPR Tanjung Harapan", kota: "Tanjung, Brebes", tabungan: 240_000_000, deposito: 310_000_000, kredit: 510_000_000, nasabah: 36 },
-  { id: 10, nama: "BPR Pagerbarang Mitra", kota: "Pagerbarang", tabungan: 180_000_000, deposito: 260_000_000, kredit: 420_000_000, nasabah: 28 },
+  /* MAIN */
+  .main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* GAS CONFIG BANNER */
+  .gas-banner { background: #fffbeb; border: 1.5px solid #f59e0b; border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .gas-banner.ok { background: #f0fdf4; border-color: #86efac; }
+  .gas-banner span { font-size: 13px; color: #92400e; flex: 1; }
+  .gas-banner.ok span { color: #166534; }
+  .gas-input { flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 12px; font-family: var(--font); color: var(--text); min-width: 0; }
+  .gas-save-btn { padding: 7px 14px; background: var(--navy); color: #fff; border: none; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: var(--font); white-space: nowrap; }
+
+  /* CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: 14px; padding: 1.1rem 1.3rem; border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--accent); }
+  .stat-icon { background: color-mix(in srgb, var(--accent) 15%, transparent); border-radius: 8px; padding: 8px; display: inline-flex; margin-bottom: 10px; font-size: 18px; }
+  .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .stat-val { font-size: 22px; font-weight: 800; color: var(--navy); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* CHART GRID */
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media(max-width: 700px) { .chart-grid { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.4rem; }
+  .chart-card h3 { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+  /* PROGRESS */
+  .prog-row { margin-bottom: 14px; }
+  .prog-head { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .prog-name { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .prog-pct { font-size: 13px; font-weight: 700; }
+  .prog-track { background: #e2e8f0; border-radius: 99px; height: 10px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+  .prog-foot { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--muted); }
+
+  /* ALERT */
+  .alert-box { background: #fff5f5; border: 1px solid #fca5a5; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+  .alert-title { font-size: 13px; font-weight: 700; color: var(--danger); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .alert-item { font-size: 12px; color: #991b1b; margin-top: 2px; }
+
+  /* TABLE */
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow-x: auto; margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--navy); }
+  thead th { padding: 10px 12px; color: #fff; font-weight: 600; text-align: left; font-size: 12px; white-space: nowrap; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #f0f4ff; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; }
+  tfoot tr { background: #eef2f7; border-top: 2px solid var(--navy); }
+  tfoot td { padding: 10px 12px; font-weight: 700; color: var(--navy); }
+
+  /* BADGE */
+  .badge { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 99px; font-weight: 600; white-space: nowrap; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red { background: #fee2e2; color: #dc2626; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+
+  /* PODIUM */
+  .podium { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+  .podium-card { background: var(--card); border-radius: 14px; padding: 1.2rem; text-align: center; border: 2px solid var(--border); }
+  .podium-card.gold { border-color: var(--gold); background: linear-gradient(135deg,#fffbeb,#fef3c7); }
+  .podium-card.silver { border-color: #94a3b8; }
+  .podium-card.bronze { border-color: #cd7f32; }
+  .podium-medal { font-size: 34px; display: block; margin-bottom: 6px; }
+  .podium-name { font-size: 13px; font-weight: 800; color: var(--navy); }
+  .podium-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .podium-score { font-size: 26px; font-weight: 800; color: var(--navy); margin-top: 6px; }
+  @media(max-width:600px) { .podium { grid-template-columns:1fr; } }
+
+  /* FORM */
+  .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; max-width: 560px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--navy); display: block; margin-bottom: 5px; }
+  .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: var(--font); color: var(--text); background: #fff; transition: border .2s; }
+  .form-control:focus { outline: none; border-color: var(--navy2); box-shadow: 0 0 0 3px rgba(42,90,140,.12); }
+  .btn-primary { width: 100%; padding: 12px; background: var(--navy); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font); transition: background .2s; margin-top: 4px; }
+  .btn-primary:hover { background: var(--navy2); }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .msg-box { padding: 11px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 14px; display: none; }
+  .msg-box.show { display: block; }
+  .msg-success { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .msg-error { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+  .msg-loading { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+  /* LAPORAN BUTTONS */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .btn-action { display: flex; align-items: center; gap: 6px; padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: opacity .2s; }
+  .btn-action:hover { opacity: .85; }
+  .btn-export { background: #16a34a; color: #fff; }
+  .btn-print { background: var(--navy); color: #fff; }
+  .btn-refresh { background: var(--gold); color: var(--navy); }
+
+  /* OVERALL SCORE */
+  .overall-score { text-align: center; margin-bottom: 16px; }
+  .overall-num { font-size: 52px; font-weight: 800; line-height: 1; }
+  .overall-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 17px; font-weight: 800; color: var(--navy); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* PROD TABS */
+  .prod-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .prod-tab { padding: 8px 20px; border-radius: 99px; font-size: 13px; font-weight: 600; border: 1.5px solid var(--border); cursor: pointer; background: var(--card); color: var(--navy); font-family: var(--font); transition: all .2s; }
+  .prod-tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .prod-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .prod-meta-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; }
+  .prod-meta-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .prod-meta-val { font-size: 19px; font-weight: 800; }
+
+  /* FOOTER */
+  footer { background: var(--navy); color: rgba(255,255,255,.45); text-align: center; font-size: 11px; padding: 1rem; margin-top: 32px; }
+
+  @media print {
+    .header, .tabs-bar, .btn-row, .gas-banner, footer { display: none !important; }
+    .main { padding: 0; }
+    .table-wrap { border: none; }
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .page.active { animation: fadeUp .3s ease; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <div class="logo-icon">🏆</div>
+      <div>
+        <div class="logo-title">Great Sale BPR</div>
+        <div class="logo-sub">PERBARINDO DPK Tegal — April 2026 Challenge</div>
+      </div>
+    </div>
+    <div class="countdown" id="countdown">
+      <div class="cd-box"><span class="cd-num" id="cd-d">00</span><span class="cd-lbl">Hari</span></div>
+      <div class="cd-box"><span class="cd-num" id="cd-h">00</span><span class="cd-lbl">Jam</span></div>
+      <div class="cd-box"><span class="cd-num" id="cd-m">00</span><span class="cd-lbl">Menit</span></div>
+      <div class="cd-box"><span class="cd-num" id="cd-s">00</span><span class="cd-lbl">Detik</span></div>
+    </div>
+  </div>
+  <div class="tabs-bar">
+    <div class="tabs-inner">
+      <button class="tab-btn active" onclick="showTab('dashboard')">📊 Dashboard</button>
+      <button class="tab-btn" onclick="showTab('produk')">📦 Produk</button>
+      <button class="tab-btn" onclick="showTab('lb-bpr')">🏅 Leaderboard BPR</button>
+      <button class="tab-btn" onclick="showTab('lb-ao')">⭐ Leaderboard AO</button>
+      <button class="tab-btn" onclick="showTab('input')">➕ Input Data</button>
+      <button class="tab-btn" onclick="showTab('laporan')">📋 Laporan</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- GAS URL CONFIG (global, always visible per tab) -->
+  <div class="gas-banner" id="gas-banner">
+    <span>⚙️ <b>Belum terhubung ke Google Sheets.</b> Tempel URL Google Apps Script Web App di bawah:</span>
+    <input class="gas-input" id="gas-url-input" type="text" placeholder="https://script.google.com/macros/s/AKfycbyABvlz5NfbpALa9qnEVwOaCKKDvHa1UWLrOqzzAT4n71Sry1ZOLJtcsXRw66OqL-lhxw/exec" />
+    <button class="gas-save-btn" onclick="saveGasUrl()">Simpan</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div id="alert-area"></div>
+    <div class="stat-grid" id="stat-grid"></div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>🎯 Progress Target</h3>
+        <div class="overall-score">
+          <div class="overall-num" id="overall-pct">—</div>
+          <div class="overall-lbl">Pencapaian Grand Total</div>
+        </div>
+        <div id="progress-bars"></div>
+      </div>
+      <div class="chart-card">
+        <h3>📈 Distribusi Produk</h3>
+        <canvas id="donut-chart" height="200"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>🏦 Perbandingan Top 6 BPR (Juta Rp)</h3>
+      <canvas id="bar-chart" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- PRODUK -->
+  <div class="page" id="page-produk">
+    <div class="section-title">📦 Manajemen Produk BPR</div>
+    <div class="prod-tabs">
+      <button class="prod-tab active" onclick="showProduk('Tabungan',this)">💰 Tabungan</button>
+      <button class="prod-tab" onclick="showProduk('Deposito',this)">🏦 Deposito</button>
+      <button class="prod-tab" onclick="showProduk('Kredit',this)">💳 Kredit</button>
+    </div>
+    <div class="prod-meta" id="prod-meta"></div>
+    <div class="table-wrap"><table id="prod-table"></table></div>
+  </div>
+
+  <!-- LEADERBOARD BPR -->
+  <div class="page" id="page-lb-bpr">
+    <div class="section-title">🏅 Peringkat BPR — PERBARINDO DPK Tegal</div>
+    <div class="podium" id="podium-bpr"></div>
+    <div class="table-wrap"><table id="lb-bpr-table"></table></div>
+  </div>
+
+  <!-- LEADERBOARD AO -->
+  <div class="page" id="page-lb-ao">
+    <div class="section-title">⭐ Leaderboard Account Officer / CS Terbaik</div>
+    <div class="podium" id="podium-ao"></div>
+    <div class="table-wrap"><table id="lb-ao-table"></table></div>
+  </div>
+
+  <!-- INPUT DATA -->
+  <div class="page" id="page-input">
+    <div class="section-title">➕ Input Realisasi Penjualan</div>
+    <div class="form-card">
+      <div class="msg-box" id="form-msg"></div>
+      <div class="form-group">
+        <label class="form-label">Nama BPR *</label>
+        <select class="form-control" id="f-bpr">
+          <option value="">-- Pilih BPR --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Produk *</label>
+        <select class="form-control" id="f-produk">
+          <option value="Tabungan">Tabungan</option>
+          <option value="Deposito">Deposito</option>
+          <option value="Kredit">Kredit</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Nasabah</label>
+        <input class="form-control" id="f-nasabah" type="text" placeholder="Nama nasabah (opsional)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nilai (Rupiah) *</label>
+        <input class="form-control" id="f-nilai" type="text" placeholder="Contoh: 50000000" oninput="formatNilai(this)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama AO / CS</label>
+        <input class="form-control" id="f-ao" type="text" placeholder="Nama petugas (opsional)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <textarea class="form-control" id="f-ket" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+      </div>
+      <button class="btn-primary" id="submit-btn" onclick="submitData()">💾 Simpan & Kirim ke Google Sheets</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;">Data akan tersimpan ke Google Sheets secara otomatis jika URL GAS sudah dikonfigurasi.</p>
+    </div>
+  </div>
+
+  <!-- LAPORAN -->
+  <div class="page" id="page-laporan">
+    <div class="section-title">📋 Rekap Laporan Per BPR</div>
+    <div class="btn-row">
+      <button class="btn-action btn-export" onclick="exportCSV()">⬇️ Ekspor CSV</button>
+      <button class="btn-action btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-action btn-refresh" onclick="loadFromSheets()">🔄 Refresh dari Sheets</button>
+    </div>
+    <div class="table-wrap"><table id="laporan-table"></table></div>
+  </div>
+
+</div>
+
+<footer>© 2026 PERBARINDO DPK Tegal — Sistem Pemantauan Great Sale BPR</footer>
+
+<script>
+// ===================== DATA =====================
+const TARGET = { tabungan: 1000000000, deposito: 1500000000, kredit: 2500000000 };
+
+let bprData = [
+  { id:1, nama:"BPR Artha Galunggung", kota:"Kota Tegal", tabungan:820000000, deposito:1400000000, kredit:2100000000, nasabah:142 },
+  { id:2, nama:"BPR Slawi Abadi", kota:"Slawi", tabungan:760000000, deposito:1200000000, kredit:1850000000, nasabah:128 },
+  { id:3, nama:"BPR Dana Mandiri Tegal", kota:"Kota Tegal", tabungan:680000000, deposito:980000000, kredit:1620000000, nasabah:109 },
+  { id:4, nama:"BPR Brebes Sejahtera", kota:"Brebes", tabungan:540000000, deposito:870000000, kredit:1400000000, nasabah:97 },
+  { id:5, nama:"BPR Bahari Tegal", kota:"Kota Tegal", tabungan:490000000, deposito:720000000, kredit:1100000000, nasabah:83 },
+  { id:6, nama:"BPR Bumiayu Makmur", kota:"Bumiayu", tabungan:420000000, deposito:650000000, kredit:980000000, nasabah:71 },
+  { id:7, nama:"BPR Kramat Jaya", kota:"Kramat, Tegal", tabungan:350000000, deposito:490000000, kredit:820000000, nasabah:58 },
+  { id:8, nama:"BPR Adiwerna Berkah", kota:"Adiwerna", tabungan:290000000, deposito:380000000, kredit:640000000, nasabah:44 },
+  { id:9, nama:"BPR Tanjung Harapan", kota:"Tanjung, Brebes", tabungan:240000000, deposito:310000000, kredit:510000000, nasabah:36 },
+  { id:10, nama:"BPR Pagerbarang Mitra", kota:"Pagerbarang", tabungan:180000000, deposito:260000000, kredit:420000000, nasabah:28 },
 ];
-
-const TARGET = { tabungan: 1_000_000_000, deposito: 1_500_000_000, kredit: 2_500_000_000 };
 
 const aoData = [
-  { id: 1, nama: "Siti Rahayu", bpr: "BPR Artha Galunggung", produk: "Kredit", nasabah: 28, nilai: 420_000_000, poin: 980 },
-  { id: 2, nama: "Budi Santoso", bpr: "BPR Slawi Abadi", produk: "Deposito", nasabah: 24, nilai: 380_000_000, poin: 860 },
-  { id: 3, nama: "Dewi Kusuma", bpr: "BPR Dana Mandiri Tegal", produk: "Tabungan", nasabah: 31, nilai: 310_000_000, poin: 820 },
-  { id: 4, nama: "Ahmad Fauzi", bpr: "BPR Artha Galunggung", produk: "Kredit", nasabah: 22, nilai: 360_000_000, poin: 790 },
-  { id: 5, nama: "Rina Fitriani", bpr: "BPR Brebes Sejahtera", produk: "Kredit", nasabah: 19, nilai: 290_000_000, poin: 720 },
-  { id: 6, nama: "Hendra Wijaya", bpr: "BPR Bahari Tegal", produk: "Deposito", nasabah: 17, nilai: 270_000_000, poin: 680 },
-  { id: 7, nama: "Nur Indah", bpr: "BPR Slawi Abadi", produk: "Tabungan", nasabah: 26, nilai: 210_000_000, poin: 640 },
-  { id: 8, nama: "Agus Purnomo", bpr: "BPR Bumiayu Makmur", produk: "Kredit", nasabah: 14, nilai: 220_000_000, poin: 590 },
-  { id: 9, nama: "Lestari Wulandari", bpr: "BPR Kramat Jaya", produk: "Tabungan", nasabah: 20, nilai: 160_000_000, poin: 540 },
-  { id: 10, nama: "Dani Kurniawan", bpr: "BPR Adiwerna Berkah", produk: "Deposito", nasabah: 12, nilai: 180_000_000, poin: 490 },
+  { nama:"Siti Rahayu", bpr:"BPR Artha Galunggung", produk:"Kredit", nasabah:28, nilai:420000000, poin:980 },
+  { nama:"Budi Santoso", bpr:"BPR Slawi Abadi", produk:"Deposito", nasabah:24, nilai:380000000, poin:860 },
+  { nama:"Dewi Kusuma", bpr:"BPR Dana Mandiri Tegal", produk:"Tabungan", nasabah:31, nilai:310000000, poin:820 },
+  { nama:"Ahmad Fauzi", bpr:"BPR Artha Galunggung", produk:"Kredit", nasabah:22, nilai:360000000, poin:790 },
+  { nama:"Rina Fitriani", bpr:"BPR Brebes Sejahtera", produk:"Kredit", nasabah:19, nilai:290000000, poin:720 },
+  { nama:"Hendra Wijaya", bpr:"BPR Bahari Tegal", produk:"Deposito", nasabah:17, nilai:270000000, poin:680 },
+  { nama:"Nur Indah", bpr:"BPR Slawi Abadi", produk:"Tabungan", nasabah:26, nilai:210000000, poin:640 },
+  { nama:"Agus Purnomo", bpr:"BPR Bumiayu Makmur", produk:"Kredit", nasabah:14, nilai:220000000, poin:590 },
+  { nama:"Lestari Wulandari", bpr:"BPR Kramat Jaya", produk:"Tabungan", nasabah:20, nilai:160000000, poin:540 },
+  { nama:"Dani Kurniawan", bpr:"BPR Adiwerna Berkah", produk:"Deposito", nasabah:12, nilai:180000000, poin:490 },
 ];
 
-const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉" };
-const TABS = ["Dashboard", "Produk", "Leaderboard BPR", "Leaderboard AO", "Input Data", "Laporan"];
+let currentProduk = 'Tabungan';
+let donutChart = null, barChart = null;
+let gasUrl = localStorage.getItem('gas_url') || '';
 
-function useCountdown(endDate) {
-  const [time, setTime] = useState({});
-  useEffect(() => {
-    const calc = () => {
-      const diff = new Date(endDate) - new Date();
-      if (diff <= 0) return setTime({ d: 0, h: 0, m: 0, s: 0 });
-      setTime({
-        d: Math.floor(diff / 86400000),
-        h: Math.floor((diff % 86400000) / 3600000),
-        m: Math.floor((diff % 3600000) / 60000),
-        s: Math.floor((diff % 60000) / 1000),
-      });
-    };
-    calc();
-    const t = setInterval(calc, 1000);
-    return () => clearInterval(t);
-  }, [endDate]);
-  return time;
+// ===================== UTILS =====================
+function rp(n) {
+  if (n >= 1e9) return 'Rp ' + (n/1e9).toFixed(1) + 'M';
+  if (n >= 1e6) return 'Rp ' + (n/1e6).toFixed(0) + 'Jt';
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+function pct(v, t) { return Math.min(100, Math.round((v/t)*100)); }
+function skor(b) { return Math.round(((b.tabungan/TARGET.tabungan)+(b.deposito/TARGET.deposito)+(b.kredit/TARGET.kredit))/3*100); }
+function sorted() { return [...bprData].sort((a,b)=>skor(b)-skor(a)); }
+const MEDALS = ['🥇','🥈','🥉'];
+
+function formatNilai(el) {
+  let v = el.value.replace(/\D/g,'');
+  el.value = v ? parseInt(v).toLocaleString('id-ID') : '';
 }
 
-function StatCard({ icon: Icon, label, value, sub, color }) {
-  return (
-    <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "1.1rem 1.3rem", borderTop: `4px solid ${color}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-        <div style={{ background: color + "18", borderRadius: 8, padding: 7 }}>
-          <Icon size={18} color={color} />
-        </div>
-        <span style={{ fontSize: 12, color: COLORS.muted, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
-      </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.navy }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: COLORS.muted, marginTop: 3 }}>{sub}</div>}
-    </div>
-  );
+// ===================== GAS URL =====================
+function saveGasUrl() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    alert('URL tidak valid. Pastikan URL berasal dari Google Apps Script.'); return;
+  }
+  gasUrl = url;
+  localStorage.setItem('gas_url', url);
+  const banner = document.getElementById('gas-banner');
+  banner.className = 'gas-banner ok';
+  banner.innerHTML = '<span>✅ <b>Terhubung ke Google Sheets.</b> URL GAS tersimpan. Data input akan dikirim otomatis.</span><button class="gas-save-btn" onclick="clearGasUrl()" style="background:#dc2626">Hapus</button>';
+}
+function clearGasUrl() {
+  gasUrl = ''; localStorage.removeItem('gas_url');
+  location.reload();
+}
+function initGasBanner() {
+  if (gasUrl) {
+    const banner = document.getElementById('gas-banner');
+    banner.className = 'gas-banner ok';
+    banner.innerHTML = '<span>✅ <b>Terhubung ke Google Sheets.</b> URL GAS aktif.</span><button class="gas-save-btn" onclick="clearGasUrl()" style="background:#dc2626">Hapus</button>';
+  }
 }
 
-function ProgressBar({ label, val, target, color }) {
-  const pct = Math.min(100, Math.round((val / target) * 100));
-  const low = pct < 50;
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.navy }}>{label}</span>
-        <span style={{ fontSize: 13, color: low ? COLORS.warning : COLORS.success, fontWeight: 700 }}>{pct}%</span>
-      </div>
-      <div style={{ background: "#e2e8f0", borderRadius: 99, height: 10, overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, background: low ? COLORS.warning : color, height: "100%", borderRadius: 99, transition: "width 0.6s ease" }} />
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-        <span style={{ fontSize: 11, color: COLORS.muted }}>Realisasi: {formatRupiah(val)}</span>
-        <span style={{ fontSize: 11, color: COLORS.muted }}>Target: {formatRupiah(target)}</span>
-      </div>
-    </div>
-  );
+// ===================== TABS =====================
+function showTab(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if (id==='dashboard') renderDashboard();
+  if (id==='produk') showProduk(currentProduk, document.querySelector('.prod-tab.active'));
+  if (id==='lb-bpr') renderLbBPR();
+  if (id==='lb-ao') renderLbAO();
+  if (id==='laporan') renderLaporan();
 }
 
-function AlertList({ bprList }) {
-  const alerts = bprList.filter(b => {
-    const total = b.tabungan + b.deposito + b.kredit;
-    const totalTarget = TARGET.tabungan + TARGET.deposito + TARGET.kredit;
-    return (total / totalTarget) * 100 < 50;
+// ===================== COUNTDOWN =====================
+function updateCountdown() {
+  const end = new Date('2026-04-30T23:59:59');
+  const diff = end - new Date();
+  if (diff <= 0) return;
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor((diff%86400000)/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+  document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const totT = bprData.reduce((a,b)=>a+b.tabungan,0);
+  const totD = bprData.reduce((a,b)=>a+b.deposito,0);
+  const totK = bprData.reduce((a,b)=>a+b.kredit,0);
+  const totN = bprData.reduce((a,b)=>a+b.nasabah,0);
+  const grand = totT+totD+totK;
+  const grandT = TARGET.tabungan+TARGET.deposito+TARGET.kredit;
+  const op = pct(grand,grandT);
+
+  // Alert
+  const alerts = bprData.filter(b=>{
+    const t=b.tabungan+b.deposito+b.kredit, tt=grandT;
+    return (t/tt)*100<50;
   });
-  if (alerts.length === 0) return null;
-  return (
-    <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 12, padding: "0.9rem 1.1rem", marginBottom: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <AlertTriangle size={16} color={COLORS.warning} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.warning }}>BPR Perlu Perhatian — Belum Capai 50% Target</span>
-      </div>
-      {alerts.map(b => (
-        <div key={b.id} style={{ fontSize: 12, color: "#991b1b", marginTop: 2 }}>• {b.nama} ({b.kota})</div>
-      ))}
-    </div>
-  );
+  const alertArea = document.getElementById('alert-area');
+  alertArea.innerHTML = alerts.length ? `<div class="alert-box">
+    <div class="alert-title">⚠️ BPR Belum Capai 50% Target</div>
+    ${alerts.map(b=>`<div class="alert-item">• ${b.nama} (${b.kota})</div>`).join('')}
+  </div>` : '';
+
+  // Stat cards
+  document.getElementById('stat-grid').innerHTML = [
+    {icon:'💰',label:'Total Tabungan Baru',val:rp(totT),sub:`Target: ${rp(TARGET.tabungan)}`,accent:'#f5a623'},
+    {icon:'🏦',label:'Total Deposito',val:rp(totD),sub:`Target: ${rp(TARGET.deposito)}`,accent:'#2a5a8c'},
+    {icon:'💳',label:'Kredit Tersalur',val:rp(totK),sub:`Target: ${rp(TARGET.kredit)}`,accent:'#1a3a5c'},
+    {icon:'👥',label:'Nasabah Baru',val:totN.toLocaleString(),sub:'Semua BPR DPK Tegal',accent:'#8b5cf6'},
+  ].map(c=>`<div class="stat-card" style="--accent:${c.accent}">
+    <div class="stat-icon" style="--accent:${c.accent}">${c.icon}</div>
+    <div class="stat-label">${c.label}</div>
+    <div class="stat-val">${c.val}</div>
+    <div class="stat-sub">${c.sub}</div>
+  </div>`).join('');
+
+  // Overall %
+  const col = op>=80?'#16a34a':op>=50?'#d97706':'#dc2626';
+  document.getElementById('overall-pct').textContent = op+'%';
+  document.getElementById('overall-pct').style.color = col;
+
+  // Progress bars
+  document.getElementById('progress-bars').innerHTML = [
+    {label:'Tabungan',val:totT,target:TARGET.tabungan,color:'#f5a623'},
+    {label:'Deposito',val:totD,target:TARGET.deposito,color:'#2a5a8c'},
+    {label:'Kredit',val:totK,target:TARGET.kredit,color:'#1a3a5c'},
+  ].map(p=>{
+    const pc=pct(p.val,p.target), low=pc<50;
+    const c=low?'#dc2626':p.color;
+    return `<div class="prog-row">
+      <div class="prog-head"><span class="prog-name">${p.label}</span><span class="prog-pct" style="color:${c}">${pc}%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${pc}%;background:${c}"></div></div>
+      <div class="prog-foot"><span>Realisasi: ${rp(p.val)}</span><span>Target: ${rp(p.target)}</span></div>
+    </div>`;
+  }).join('');
+
+  // Donut
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('donut-chart'), {
+    type:'doughnut',
+    data:{ labels:['Tabungan','Deposito','Kredit'], datasets:[{ data:[totT,totD,totK], backgroundColor:['#f5a623','#2a5a8c','#1a3a5c'], borderWidth:2, borderColor:'#fff', hoverOffset:6 }] },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:12}, padding:14 } }, tooltip:{ callbacks:{ label: ctx => rp(ctx.raw) } } }, cutout:'60%', animation:{ duration:600 } }
+  });
+
+  // Bar
+  const top6 = sorted().slice(0,6);
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('bar-chart'), {
+    type:'bar',
+    data:{
+      labels: top6.map(b=>b.nama.replace('BPR ','').split(' ')[0]),
+      datasets:[
+        {label:'Tabungan', data:top6.map(b=>Math.round(b.tabungan/1e6)), backgroundColor:'#f5a623', borderRadius:4},
+        {label:'Deposito', data:top6.map(b=>Math.round(b.deposito/1e6)), backgroundColor:'#2a5a8c', borderRadius:4},
+        {label:'Kredit', data:top6.map(b=>Math.round(b.kredit/1e6)), backgroundColor:'#1a3a5c', borderRadius:4},
+      ]
+    },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{font:{size:12},padding:14} }, tooltip:{ callbacks:{ label: ctx => `Rp ${ctx.raw}Jt` } } }, scales:{ x:{grid:{display:false},ticks:{font:{size:11}}}, y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11},callback:v=>`${v}Jt`}} }, animation:{duration:600} }
+  });
 }
 
-export default function App() {
-  const [tab, setTab] = useState("Dashboard");
-  const [bprData, setBprData] = useState(initialBPRData);
-  const [produkTab, setProdukTab] = useState("Tabungan");
-  const [form, setForm] = useState({ bpr: "", produk: "Tabungan", nilai: "", keterangan: "" });
-  const [formMsg, setFormMsg] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const countdown = useCountdown("2026-04-30T23:59:59");
+// ===================== PRODUK =====================
+function showProduk(prod, el) {
+  currentProduk = prod;
+  document.querySelectorAll('.prod-tab').forEach(t=>t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const key = prod.toLowerCase();
+  const target = TARGET[key];
+  const total = bprData.reduce((a,b)=>a+b[key],0);
+  const gap = target - total;
+  const pc = pct(total,target);
+  const col = pc>=100?'#16a34a':pc>=50?'#d97706':'#dc2626';
 
-  const totalTabungan = bprData.reduce((a, b) => a + b.tabungan, 0);
-  const totalDeposito = bprData.reduce((a, b) => a + b.deposito, 0);
-  const totalKredit = bprData.reduce((a, b) => a + b.kredit, 0);
-  const totalNasabah = bprData.reduce((a, b) => a + b.nasabah, 0);
-  const grandTotal = totalTabungan + totalDeposito + totalKredit;
-  const grandTarget = TARGET.tabungan + TARGET.deposito + TARGET.kredit;
-  const overallPct = Math.min(100, Math.round((grandTotal / grandTarget) * 100));
+  document.getElementById('prod-meta').innerHTML = [
+    {lbl:'Target', val:rp(target), col:'#64748b'},
+    {lbl:'Realisasi', val:rp(total), col:'#1a3a5c'},
+    {lbl:'Gap', val:gap>0?rp(gap):'✓ Tercapai!', col:gap>0?'#dc2626':'#16a34a'},
+    {lbl:'Pencapaian', val:pc+'%', col},
+  ].map(m=>`<div class="prod-meta-item"><div class="prod-meta-lbl">${m.lbl}</div><div class="prod-meta-val" style="color:${m.col}">${m.val}</div></div>`).join('');
 
-  const sortedBPR = [...bprData]
-    .map(b => ({ ...b, skor: Math.round(((b.tabungan / TARGET.tabungan) + (b.deposito / TARGET.deposito) + (b.kredit / TARGET.kredit)) * 100) / 3 }))
-    .sort((a, b) => b.skor - a.skor);
-
-  const handleInput = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-
-  const handleSubmit = () => {
-    if (!form.bpr) return setFormMsg({ type: "error", text: "Pilih BPR terlebih dahulu." });
-    const val = parseInt(form.nilai.replace(/\D/g, ""), 10);
-    if (!val || val <= 0) return setFormMsg({ type: "error", text: "Masukkan nilai yang valid." });
-    setBprData(prev => prev.map(b => {
-      if (b.nama !== form.bpr) return b;
-      const key = form.produk.toLowerCase();
-      return { ...b, [key]: b[key] + val, nasabah: b.nasabah + 1 };
-    }));
-    setFormMsg({ type: "success", text: `Berhasil menambahkan ${form.produk} senilai ${formatRupiah(val)} untuk ${form.bpr}.` });
-    setForm(f => ({ ...f, nilai: "", keterangan: "" }));
-  };
-
-  const donutData = [
-    { name: "Tabungan", value: totalTabungan },
-    { name: "Deposito", value: totalDeposito },
-    { name: "Kredit", value: totalKredit },
-  ];
-  const donutColors = [COLORS.gold, COLORS.navy, COLORS.lightNavy];
-
-  const barData = sortedBPR.slice(0, 6).map(b => ({
-    name: b.nama.replace("BPR ", "").split(" ")[0],
-    Tabungan: Math.round(b.tabungan / 1_000_000),
-    Deposito: Math.round(b.deposito / 1_000_000),
-    Kredit: Math.round(b.kredit / 1_000_000),
-  }));
-
-  return (
-    <div style={{ fontFamily: "'Segoe UI', sans-serif", background: COLORS.bgLight, minHeight: "100vh" }}>
-      {/* HEADER */}
-      <div style={{ background: `linear-gradient(135deg, ${COLORS.navy} 0%, ${COLORS.lightNavy} 100%)`, padding: "0" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.2rem 1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ background: COLORS.gold, borderRadius: 12, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Trophy size={24} color={COLORS.navy} />
-              </div>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>Great Sale BPR</div>
-                <div style={{ fontSize: 12, color: COLORS.gold, fontWeight: 600 }}>PERBARINDO DPK Tegal — April 2026 Challenge</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              {[{ label: "Hari", val: countdown.d }, { label: "Jam", val: countdown.h }, { label: "Menit", val: countdown.m }, { label: "Detik", val: countdown.s }].map(c => (
-                <div key={c.label} style={{ background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 10px", textAlign: "center", minWidth: 44 }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.gold }}>{String(c.val ?? 0).padStart(2, "0")}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", textTransform: "uppercase" }}>{c.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        {/* NAV TABS */}
-        <div style={{ background: "rgba(0,0,0,0.25)", overflowX: "auto" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", padding: "0 1.5rem" }}>
-            {TABS.map(t => (
-              <button key={t} onClick={() => setTab(t)}
-                style={{ padding: "10px 16px", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", whiteSpace: "nowrap", borderBottom: tab === t ? `3px solid ${COLORS.gold}` : "3px solid transparent", color: tab === t ? COLORS.gold : "rgba(255,255,255,0.7)", background: "transparent", transition: "all 0.2s" }}>
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
-
-        {/* DASHBOARD */}
-        {tab === "Dashboard" && (
-          <div>
-            <AlertList bprList={bprData} />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
-              <StatCard icon={PiggyBank} label="Total Tabungan Baru" value={formatRupiah(totalTabungan)} sub={`Target: ${formatRupiah(TARGET.tabungan)}`} color={COLORS.gold} />
-              <StatCard icon={Wallet} label="Total Deposito" value={formatRupiah(totalDeposito)} sub={`Target: ${formatRupiah(TARGET.deposito)}`} color={COLORS.lightNavy} />
-              <StatCard icon={CreditCard} label="Kredit Tersalur" value={formatRupiah(totalKredit)} sub={`Target: ${formatRupiah(TARGET.kredit)}`} color={COLORS.navy} />
-              <StatCard icon={Users} label="Nasabah Baru" value={totalNasabah.toLocaleString()} sub="Semua BPR DPK Tegal" color="#8b5cf6" />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-              {/* PROGRESS */}
-              <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "1.2rem 1.4rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                  <Target size={16} color={COLORS.navy} />
-                  <span style={{ fontWeight: 700, fontSize: 14, color: COLORS.navy }}>Progress Target Keseluruhan</span>
-                </div>
-                <div style={{ textAlign: "center", marginBottom: 16 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800, color: overallPct >= 80 ? COLORS.success : overallPct >= 50 ? COLORS.gold : COLORS.warning }}>{overallPct}%</span>
-                  <div style={{ fontSize: 12, color: COLORS.muted }}>Pencapaian Grand Total</div>
-                </div>
-                <ProgressBar label="Tabungan" val={totalTabungan} target={TARGET.tabungan} color={COLORS.gold} />
-                <ProgressBar label="Deposito" val={totalDeposito} target={TARGET.deposito} color={COLORS.lightNavy} />
-                <ProgressBar label="Kredit" val={totalKredit} target={TARGET.kredit} color={COLORS.navy} />
-              </div>
-
-              {/* DONUT */}
-              <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "1.2rem 1.4rem" }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.navy, marginBottom: 8 }}>Distribusi Produk</div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={donutData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value">
-                      {donutData.map((_, i) => <Cell key={i} fill={donutColors[i]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v) => formatRupiah(v)} />
-                    <Legend formatter={(v) => <span style={{ fontSize: 12 }}>{v}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* BAR CHART */}
-            <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "1.2rem 1.4rem" }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.navy, marginBottom: 12 }}>Perbandingan Top 6 BPR (Juta Rupiah)</div>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={barData} margin={{ top: 4, right: 10, bottom: 4, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v) => `Rp ${v}Jt`} />
-                  <Legend formatter={(v) => <span style={{ fontSize: 12 }}>{v}</span>} />
-                  <Bar dataKey="Tabungan" fill={COLORS.gold} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Deposito" fill={COLORS.lightNavy} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Kredit" fill={COLORS.navy} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* PRODUK */}
-        {tab === "Produk" && (
-          <div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              {["Tabungan", "Deposito", "Kredit"].map(p => (
-                <button key={p} onClick={() => setProdukTab(p)}
-                  style={{ padding: "8px 20px", borderRadius: 99, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", background: produkTab === p ? COLORS.navy : "#fff", color: produkTab === p ? "#fff" : COLORS.navy, border: `1px solid ${produkTab === p ? COLORS.navy : COLORS.border}`, transition: "all 0.2s" }}>
-                  {p}
-                </button>
-              ))}
-            </div>
-            {["Tabungan", "Deposito", "Kredit"].map(produk => produkTab === produk && (
-              <div key={produk}>
-                {(() => {
-                  const key = produk.toLowerCase();
-                  const totalVal = bprData.reduce((a, b) => a + b[key], 0);
-                  const target = TARGET[key];
-                  const gap = target - totalVal;
-                  const pct = Math.round((totalVal / target) * 100);
-                  return (
-                    <div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
-                        {[
-                          { label: "Target", val: formatRupiah(target), color: COLORS.muted },
-                          { label: "Realisasi", val: formatRupiah(totalVal), color: COLORS.navy },
-                          { label: "Gap", val: gap > 0 ? formatRupiah(gap) : "Tercapai!", color: gap > 0 ? COLORS.warning : COLORS.success },
-                          { label: "Pencapaian", val: `${pct}%`, color: pct >= 100 ? COLORS.success : pct >= 50 ? COLORS.gold : COLORS.warning },
-                        ].map(m => (
-                          <div key={m.label} style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "1rem 1.2rem" }}>
-                            <div style={{ fontSize: 11, color: COLORS.muted, textTransform: "uppercase", marginBottom: 4 }}>{m.label}</div>
-                            <div style={{ fontSize: 20, fontWeight: 700, color: m.color }}>{m.val}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, overflow: "hidden" }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                          <thead>
-                            <tr style={{ background: COLORS.navy }}>
-                              {["Nama BPR", "Kota", "Realisasi", "Target", "% Capai", "Status"].map(h => (
-                                <th key={h} style={{ padding: "10px 14px", color: "#fff", fontWeight: 600, textAlign: "left", fontSize: 12 }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {bprData.map((b, i) => {
-                              const val = b[key];
-                              const pctRow = Math.round((val / target) * 100);
-                              const over = pctRow >= 100;
-                              const warn = pctRow < 50;
-                              return (
-                                <tr key={b.id} style={{ background: over ? "#f0fdf4" : warn ? "#fff5f5" : i % 2 === 0 ? "#fff" : "#f8fafc" }}>
-                                  <td style={{ padding: "9px 14px", fontWeight: 500, color: COLORS.navy }}>{b.nama}</td>
-                                  <td style={{ padding: "9px 14px", color: COLORS.muted }}>{b.kota}</td>
-                                  <td style={{ padding: "9px 14px", fontWeight: 600 }}>{formatRupiah(val)}</td>
-                                  <td style={{ padding: "9px 14px", color: COLORS.muted }}>{formatRupiah(target)}</td>
-                                  <td style={{ padding: "9px 14px", fontWeight: 700, color: over ? COLORS.success : warn ? COLORS.warning : COLORS.navy }}>{pctRow}%</td>
-                                  <td style={{ padding: "9px 14px" }}>
-                                    {over ? <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>✓ Melampaui</span>
-                                      : warn ? <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>⚠ Perlu Pacu</span>
-                                        : <span style={{ background: "#fef9c3", color: "#854d0e", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>→ On Track</span>}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* LEADERBOARD BPR */}
-        {tab === "Leaderboard BPR" && (
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: COLORS.navy, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <Trophy size={20} color={COLORS.gold} /> Peringkat BPR — PERBARINDO DPK Tegal
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-              {sortedBPR.slice(0, 3).map((b, i) => (
-                <div key={b.id} style={{ background: i === 0 ? `linear-gradient(135deg, #fffbeb, #fef3c7)` : "#fff", border: `2px solid ${i === 0 ? COLORS.gold : i === 1 ? "#94a3b8" : "#cd7f32"}`, borderRadius: 14, padding: "1.2rem", textAlign: "center" }}>
-                  <div style={{ fontSize: 32 }}>{MEDAL[i + 1]}</div>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: COLORS.navy, marginTop: 4 }}>{b.nama}</div>
-                  <div style={{ fontSize: 12, color: COLORS.muted }}>{b.kota}</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: i === 0 ? COLORS.darkGold : COLORS.navy, marginTop: 6 }}>{Math.round(b.skor)}%</div>
-                  <div style={{ fontSize: 11, color: COLORS.muted }}>Rata-rata pencapaian</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: COLORS.navy }}>
-                    {["#", "Nama BPR", "Kota", "Tabungan", "Deposito", "Kredit", "Total Skor", "Status"].map(h => (
-                      <th key={h} style={{ padding: "10px 12px", color: "#fff", fontWeight: 600, textAlign: "left", fontSize: 12 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedBPR.map((b, i) => {
-                    const totalVal = b.tabungan + b.deposito + b.kredit;
-                    const totalTarget = TARGET.tabungan + TARGET.deposito + TARGET.kredit;
-                    const pctTotal = Math.round((totalVal / totalTarget) * 100);
-                    return (
-                      <tr key={b.id} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc", borderBottom: `1px solid ${COLORS.border}` }}>
-                        <td style={{ padding: "10px 12px", fontWeight: 700, color: i < 3 ? COLORS.gold : COLORS.muted, fontSize: 15 }}>{MEDAL[i + 1] || i + 1}</td>
-                        <td style={{ padding: "10px 12px", fontWeight: 600, color: COLORS.navy }}>{b.nama}</td>
-                        <td style={{ padding: "10px 12px", color: COLORS.muted }}>{b.kota}</td>
-                        <td style={{ padding: "10px 12px" }}>{formatRupiah(b.tabungan)}</td>
-                        <td style={{ padding: "10px 12px" }}>{formatRupiah(b.deposito)}</td>
-                        <td style={{ padding: "10px 12px" }}>{formatRupiah(b.kredit)}</td>
-                        <td style={{ padding: "10px 12px", fontWeight: 700, color: pctTotal >= 100 ? COLORS.success : COLORS.navy }}>{Math.round(b.skor)}%</td>
-                        <td style={{ padding: "10px 12px" }}>
-                          {pctTotal >= 100
-                            ? <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>✓ Melampaui</span>
-                            : pctTotal < 50
-                              ? <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>⚠ Alert</span>
-                              : <span style={{ background: "#dbeafe", color: "#1d4ed8", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>→ Progress</span>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* LEADERBOARD AO */}
-        {tab === "Leaderboard AO" && (
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: COLORS.navy, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <Star size={20} color={COLORS.gold} /> Leaderboard Account Officer / CS Terbaik
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-              {aoData.slice(0, 3).map((a, i) => (
-                <div key={a.id} style={{ background: "#fff", border: `2px solid ${i === 0 ? COLORS.gold : i === 1 ? "#94a3b8" : "#cd7f32"}`, borderRadius: 14, padding: "1rem", textAlign: "center" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: i === 0 ? COLORS.gold : COLORS.navy, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontSize: 16 }}>{MEDAL[i + 1]}</div>
-                  <div style={{ fontWeight: 700, color: COLORS.navy }}>{a.nama}</div>
-                  <div style={{ fontSize: 12, color: COLORS.muted }}>{a.bpr}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.navy, marginTop: 6 }}>{a.poin} poin</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: COLORS.navy }}>
-                    {["#", "Nama", "BPR Asal", "Produk Unggulan", "Nasabah", "Nilai Transaksi", "Poin"].map(h => (
-                      <th key={h} style={{ padding: "10px 12px", color: "#fff", fontWeight: 600, textAlign: "left", fontSize: 12 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {aoData.map((a, i) => (
-                    <tr key={a.id} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc", borderBottom: `1px solid ${COLORS.border}` }}>
-                      <td style={{ padding: "10px 12px", fontWeight: 700, color: i < 3 ? COLORS.gold : COLORS.muted, fontSize: 15 }}>{MEDAL[i + 1] || i + 1}</td>
-                      <td style={{ padding: "10px 12px", fontWeight: 600, color: COLORS.navy }}>{a.nama}</td>
-                      <td style={{ padding: "10px 12px", fontSize: 12, color: COLORS.muted }}>{a.bpr}</td>
-                      <td style={{ padding: "10px 12px" }}>
-                        <span style={{ background: a.produk === "Kredit" ? "#dbeafe" : a.produk === "Deposito" ? "#fef9c3" : "#dcfce7", color: a.produk === "Kredit" ? "#1d4ed8" : a.produk === "Deposito" ? "#854d0e" : "#16a34a", fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>{a.produk}</span>
-                      </td>
-                      <td style={{ padding: "10px 12px", fontWeight: 600 }}>{a.nasabah}</td>
-                      <td style={{ padding: "10px 12px" }}>{formatRupiah(a.nilai)}</td>
-                      <td style={{ padding: "10px 12px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <div style={{ flex: 1, background: "#e2e8f0", borderRadius: 99, height: 6, overflow: "hidden", minWidth: 60 }}>
-                            <div style={{ width: `${(a.poin / aoData[0].poin) * 100}%`, background: COLORS.gold, height: "100%", borderRadius: 99 }} />
-                          </div>
-                          <span style={{ fontWeight: 700, color: COLORS.navy }}>{a.poin}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* INPUT DATA */}
-        {tab === "Input Data" && (
-          <div style={{ maxWidth: 540 }}>
-            <div style={{ fontWeight: 700, fontSize: 18, color: COLORS.navy, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <Plus size={20} color={COLORS.navy} /> Input Realisasi Penjualan
-            </div>
-            <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "1.5rem" }}>
-              {formMsg && (
-                <div style={{ padding: "10px 14px", borderRadius: 8, marginBottom: 14, background: formMsg.type === "error" ? "#fee2e2" : "#dcfce7", color: formMsg.type === "error" ? "#dc2626" : "#16a34a", fontSize: 13, fontWeight: 500 }}>
-                  {formMsg.text}
-                </div>
-              )}
-              {[
-                { label: "Nama BPR *", name: "bpr", type: "select", options: ["", ...bprData.map(b => b.nama)] },
-                { label: "Produk *", name: "produk", type: "select", options: ["Tabungan", "Deposito", "Kredit"] },
-                { label: "Nilai (Rupiah) *", name: "nilai", type: "text", placeholder: "Contoh: 50000000" },
-                { label: "Keterangan", name: "keterangan", type: "text", placeholder: "Opsional" },
-              ].map(f => (
-                <div key={f.name} style={{ marginBottom: 14 }}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: COLORS.navy, display: "block", marginBottom: 5 }}>{f.label}</label>
-                  {f.type === "select" ? (
-                    <select name={f.name} value={form[f.name]} onChange={handleInput}
-                      style={{ width: "100%", padding: "9px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, color: COLORS.navy, background: "#fff" }}>
-                      {f.options.map(o => <option key={o} value={o}>{o || "-- Pilih BPR --"}</option>)}
-                    </select>
-                  ) : (
-                    <input name={f.name} value={form[f.name]} onChange={handleInput} placeholder={f.placeholder}
-                      style={{ width: "100%", padding: "9px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, color: COLORS.navy, boxSizing: "border-box" }} />
-                  )}
-                </div>
-              ))}
-              <button onClick={handleSubmit}
-                style={{ width: "100%", padding: "11px", background: COLORS.navy, color: "#fff", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", marginTop: 4 }}>
-                Simpan Realisasi
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* LAPORAN */}
-        {tab === "Laporan" && (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 18, color: COLORS.navy, display: "flex", alignItems: "center", gap: 8 }}>
-                <Award size={20} color={COLORS.navy} /> Rekap Laporan Per BPR
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => alert("Fitur ekspor akan mengunduh file Excel/CSV.")}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: COLORS.success, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                  <Download size={14} /> Ekspor
-                </button>
-                <button onClick={() => window.print()}
-                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: COLORS.navy, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                  <Printer size={14} /> Print
-                </button>
-              </div>
-            </div>
-            <div style={{ background: "#fff", border: `1px solid ${COLORS.border}`, borderRadius: 14, overflow: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: COLORS.navy }}>
-                    {["No", "Nama BPR", "Kota", "Tabungan", "% Tab", "Deposito", "% Dep", "Kredit", "% Krd", "Nasabah", "Total"].map(h => (
-                      <th key={h} style={{ padding: "10px 10px", color: "#fff", fontWeight: 600, textAlign: "left", fontSize: 11, whiteSpace: "nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {bprData.map((b, i) => {
-                    const pTab = Math.round((b.tabungan / TARGET.tabungan) * 100);
-                    const pDep = Math.round((b.deposito / TARGET.deposito) * 100);
-                    const pKrd = Math.round((b.kredit / TARGET.kredit) * 100);
-                    const total = b.tabungan + b.deposito + b.kredit;
-                    return (
-                      <tr key={b.id} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc", borderBottom: `1px solid ${COLORS.border}` }}>
-                        <td style={{ padding: "9px 10px", color: COLORS.muted }}>{i + 1}</td>
-                        <td style={{ padding: "9px 10px", fontWeight: 600, color: COLORS.navy, whiteSpace: "nowrap" }}>{b.nama}</td>
-                        <td style={{ padding: "9px 10px", color: COLORS.muted, whiteSpace: "nowrap" }}>{b.kota}</td>
-                        <td style={{ padding: "9px 10px" }}>{formatRupiah(b.tabungan)}</td>
-                        <td style={{ padding: "9px 10px", color: pTab < 50 ? COLORS.warning : COLORS.success, fontWeight: 700 }}>{pTab}%</td>
-                        <td style={{ padding: "9px 10px" }}>{formatRupiah(b.deposito)}</td>
-                        <td style={{ padding: "9px 10px", color: pDep < 50 ? COLORS.warning : COLORS.success, fontWeight: 700 }}>{pDep}%</td>
-                        <td style={{ padding: "9px 10px" }}>{formatRupiah(b.kredit)}</td>
-                        <td style={{ padding: "9px 10px", color: pKrd < 50 ? COLORS.warning : COLORS.success, fontWeight: 700 }}>{pKrd}%</td>
-                        <td style={{ padding: "9px 10px", textAlign: "center" }}>{b.nasabah}</td>
-                        <td style={{ padding: "9px 10px", fontWeight: 700, color: COLORS.navy }}>{formatRupiah(total)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr style={{ background: "#1a3a5c10", borderTop: `2px solid ${COLORS.navy}` }}>
-                    <td colSpan={3} style={{ padding: "10px 10px", fontWeight: 800, color: COLORS.navy, fontSize: 13 }}>TOTAL KESELURUHAN</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700 }}>{formatRupiah(totalTabungan)}</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700, color: COLORS.gold }}>{Math.round((totalTabungan / TARGET.tabungan) * 100)}%</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700 }}>{formatRupiah(totalDeposito)}</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700, color: COLORS.gold }}>{Math.round((totalDeposito / TARGET.deposito) * 100)}%</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700 }}>{formatRupiah(totalKredit)}</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700, color: COLORS.gold }}>{Math.round((totalKredit / TARGET.kredit) * 100)}%</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 700 }}>{totalNasabah}</td>
-                    <td style={{ padding: "10px 10px", fontWeight: 800, color: COLORS.navy }}>{formatRupiah(grandTotal)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        )}
-
-      </div>
-
-      {/* FOOTER */}
-      <div style={{ background: COLORS.navy, color: "rgba(255,255,255,0.5)", textAlign: "center", fontSize: 11, padding: "1rem", marginTop: 32 }}>
-        © 2026 PERBARINDO DPK Tegal — Sistem Pemantauan Great Sale BPR
-      </div>
-    </div>
-  );
+  document.getElementById('prod-table').innerHTML = `
+    <thead><tr>
+      <th>Nama BPR</th><th>Kota</th><th>Realisasi</th><th>Target</th><th>% Capai</th><th>Status</th>
+    </tr></thead>
+    <tbody>${bprData.map(b=>{
+      const v=b[key], pc=pct(v,target), over=pc>=100, warn=pc<50;
+      return `<tr style="background:${over?'#f0fdf4':warn?'#fff5f5':''}">
+        <td style="font-weight:600;color:#1a3a5c">${b.nama}</td>
+        <td style="color:#64748b">${b.kota}</td>
+        <td style="font-weight:600">${rp(v)}</td>
+        <td style="color:#64748b">${rp(target)}</td>
+        <td style="font-weight:700;color:${over?'#16a34a':warn?'#dc2626':'#1a3a5c'}">${pc}%</td>
+        <td>${over?'<span class="badge badge-green">✓ Melampaui</span>':warn?'<span class="badge badge-red">⚠ Perlu Pacu</span>':'<span class="badge badge-yellow">→ On Track</span>'}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
 }
+
+// ===================== LEADERBOARD BPR =====================
+function renderLbBPR() {
+  const s = sorted();
+  document.getElementById('podium-bpr').innerHTML = s.slice(0,3).map((b,i)=>`
+    <div class="podium-card ${['gold','silver','bronze'][i]}">
+      <span class="podium-medal">${MEDALS[i]}</span>
+      <div class="podium-name">${b.nama}</div>
+      <div class="podium-sub">${b.kota}</div>
+      <div class="podium-score">${skor(b)}%</div>
+      <div style="font-size:11px;color:#64748b">Rata-rata pencapaian</div>
+    </div>`).join('');
+
+  document.getElementById('lb-bpr-table').innerHTML = `
+    <thead><tr><th>#</th><th>Nama BPR</th><th>Kota</th><th>Tabungan</th><th>Deposito</th><th>Kredit</th><th>Skor</th><th>Status</th></tr></thead>
+    <tbody>${s.map((b,i)=>{
+      const totalVal=b.tabungan+b.deposito+b.kredit, totalT=TARGET.tabungan+TARGET.deposito+TARGET.kredit;
+      const p=pct(totalVal,totalT), sk=skor(b);
+      return `<tr>
+        <td style="font-weight:700;color:${i<3?'#f5a623':'#64748b'};font-size:16px">${MEDALS[i]||i+1}</td>
+        <td style="font-weight:600;color:#1a3a5c">${b.nama}</td>
+        <td style="color:#64748b">${b.kota}</td>
+        <td>${rp(b.tabungan)}</td>
+        <td>${rp(b.deposito)}</td>
+        <td>${rp(b.kredit)}</td>
+        <td style="font-weight:700;color:${sk>=80?'#16a34a':'#1a3a5c'}">${sk}%</td>
+        <td>${p>=100?'<span class="badge badge-green">✓ Melampaui</span>':p<50?'<span class="badge badge-red">⚠ Alert</span>':'<span class="badge badge-blue">→ Progress</span>'}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+// ===================== LEADERBOARD AO =====================
+function renderLbAO() {
+  const sorted_ao = [...aoData].sort((a,b)=>b.poin-a.poin);
+  document.getElementById('podium-ao').innerHTML = sorted_ao.slice(0,3).map((a,i)=>`
+    <div class="podium-card ${['gold','silver','bronze'][i]}">
+      <span class="podium-medal">${MEDALS[i]}</span>
+      <div class="podium-name">${a.nama}</div>
+      <div class="podium-sub">${a.bpr}</div>
+      <div class="podium-score">${a.poin}</div>
+      <div style="font-size:11px;color:#64748b">Poin</div>
+    </div>`).join('');
+
+  const maxPoin = sorted_ao[0].poin;
+  document.getElementById('lb-ao-table').innerHTML = `
+    <thead><tr><th>#</th><th>Nama</th><th>BPR Asal</th><th>Produk</th><th>Nasabah</th><th>Nilai Transaksi</th><th>Poin</th></tr></thead>
+    <tbody>${sorted_ao.map((a,i)=>{
+      const bc = a.produk==='Kredit'?'badge-blue':a.produk==='Deposito'?'badge-yellow':'badge-green';
+      const barW = Math.round((a.poin/maxPoin)*100);
+      return `<tr>
+        <td style="font-weight:700;color:${i<3?'#f5a623':'#64748b'};font-size:16px">${MEDALS[i]||i+1}</td>
+        <td style="font-weight:600;color:#1a3a5c">${a.nama}</td>
+        <td style="font-size:12px;color:#64748b">${a.bpr}</td>
+        <td><span class="badge ${bc}">${a.produk}</span></td>
+        <td style="font-weight:600">${a.nasabah}</td>
+        <td>${rp(a.nilai)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;background:#e2e8f0;border-radius:99px;height:6px;min-width:60px;overflow:hidden">
+              <div style="width:${barW}%;background:#f5a623;height:100%;border-radius:99px"></div>
+            </div>
+            <span style="font-weight:700;color:#1a3a5c">${a.poin}</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+// ===================== INPUT DATA =====================
+function populateBPRSelect() {
+  const sel = document.getElementById('f-bpr');
+  bprData.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.nama; opt.textContent = b.nama;
+    sel.appendChild(opt);
+  });
+}
+
+function showMsg(type, text) {
+  const el = document.getElementById('form-msg');
+  el.className = `msg-box show msg-${type}`;
+  el.textContent = text;
+  if (type !== 'loading') setTimeout(()=>{ el.className='msg-box'; }, 5000);
+}
+
+async function submitData() {
+  const bprNama = document.getElementById('f-bpr').value;
+  const produk = document.getElementById('f-produk').value;
+  const nasabah = document.getElementById('f-nasabah').value.trim();
+  const nilaiRaw = document.getElementById('f-nilai').value.replace(/\./g,'').replace(/,/g,'');
+  const ao = document.getElementById('f-ao').value.trim();
+  const ket = document.getElementById('f-ket').value.trim();
+  const nilai = parseInt(nilaiRaw, 10);
+
+  if (!bprNama) return showMsg('error','Pilih BPR terlebih dahulu.');
+  if (!nilai || nilai <= 0) return showMsg('error','Masukkan nilai yang valid (angka lebih dari 0).');
+
+  // Update local state
+  bprData = bprData.map(b => {
+    if (b.nama !== bprNama) return b;
+    const key = produk.toLowerCase();
+    return { ...b, [key]: b[key] + nilai, nasabah: b.nasabah + 1 };
+  });
+
+  // Send to Google Sheets
+  if (gasUrl) {
+    showMsg('loading','⏳ Mengirim data ke Google Sheets...');
+    document.getElementById('submit-btn').disabled = true;
+    try {
+      const payload = {
+        timestamp: new Date().toLocaleString('id-ID'),
+        bpr: bprNama,
+        produk, nasabah, nilai, ao, keterangan: ket
+      };
+      await fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      showMsg('success', `✅ Data berhasil disimpan ke Google Sheets! ${produk} senilai ${rp(nilai)} untuk ${bprNama}.`);
+    } catch(e) {
+      showMsg('error','Gagal mengirim ke Google Sheets. Data tetap tersimpan lokal.');
+    }
+    document.getElementById('submit-btn').disabled = false;
+  } else {
+    showMsg('success', `✅ Data tersimpan lokal. ${produk} senilai ${rp(nilai)} untuk ${bprNama}. (Konfigurasi URL GAS untuk simpan ke Sheets.)`);
+  }
+
+  // Reset form
+  document.getElementById('f-bpr').value = '';
+  document.getElementById('f-nasabah').value = '';
+  document.getElementById('f-nilai').value = '';
+  document.getElementById('f-ao').value = '';
+  document.getElementById('f-ket').value = '';
+}
+
+// ===================== LAPORAN =====================
+function renderLaporan() {
+  const totT = bprData.reduce((a,b)=>a+b.tabungan,0);
+  const totD = bprData.reduce((a,b)=>a+b.deposito,0);
+  const totK = bprData.reduce((a,b)=>a+b.kredit,0);
+  const totN = bprData.reduce((a,b)=>a+b.nasabah,0);
+
+  document.getElementById('laporan-table').innerHTML = `
+    <thead><tr>
+      <th>No</th><th>Nama BPR</th><th>Kota</th>
+      <th>Tabungan</th><th>%</th>
+      <th>Deposito</th><th>%</th>
+      <th>Kredit</th><th>%</th>
+      <th>Nasabah</th><th>Total</th>
+    </tr></thead>
+    <tbody>${bprData.map((b,i)=>{
+      const pT=pct(b.tabungan,TARGET.tabungan), pD=pct(b.deposito,TARGET.deposito), pK=pct(b.kredit,TARGET.kredit);
+      const total=b.tabungan+b.deposito+b.kredit;
+      return `<tr>
+        <td style="color:#64748b">${i+1}</td>
+        <td style="font-weight:600;color:#1a3a5c">${b.nama}</td>
+        <td style="color:#64748b">${b.kota}</td>
+        <td>${rp(b.tabungan)}</td><td style="font-weight:700;color:${pT<50?'#dc2626':'#16a34a'}">${pT}%</td>
+        <td>${rp(b.deposito)}</td><td style="font-weight:700;color:${pD<50?'#dc2626':'#16a34a'}">${pD}%</td>
+        <td>${rp(b.kredit)}</td><td style="font-weight:700;color:${pK<50?'#dc2626':'#16a34a'}">${pK}%</td>
+        <td style="text-align:center">${b.nasabah}</td>
+        <td style="font-weight:700;color:#1a3a5c">${rp(total)}</td>
+      </tr>`;
+    }).join('')}</tbody>
+    <tfoot><tr>
+      <td colspan="3">TOTAL KESELURUHAN</td>
+      <td>${rp(totT)}</td><td style="color:#f5a623;font-weight:700">${pct(totT,TARGET.tabungan)}%</td>
+      <td>${rp(totD)}</td><td style="color:#f5a623;font-weight:700">${pct(totD,TARGET.deposito)}%</td>
+      <td>${rp(totK)}</td><td style="color:#f5a623;font-weight:700">${pct(totK,TARGET.kredit)}%</td>
+      <td style="text-align:center">${totN}</td>
+      <td style="color:#1a3a5c">${rp(totT+totD+totK)}</td>
+    </tr></tfoot>`;
+}
+
+function exportCSV() {
+  const rows = [['No','Nama BPR','Kota','Tabungan','% Tab','Deposito','% Dep','Kredit','% Krd','Nasabah','Total']];
+  bprData.forEach((b,i) => {
+    rows.push([
+      i+1, b.nama, b.kota,
+      b.tabungan, pct(b.tabungan,TARGET.tabungan)+'%',
+      b.deposito, pct(b.deposito,TARGET.deposito)+'%',
+      b.kredit, pct(b.kredit,TARGET.kredit)+'%',
+      b.nasabah, b.tabungan+b.deposito+b.kredit
+    ]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = 'GreatSale_BPR_'+new Date().toLocaleDateString('id-ID').replace(/\//g,'-')+'.csv';
+  a.click();
+}
+
+async function loadFromSheets() {
+  if (!gasUrl) return alert('URL GAS belum dikonfigurasi.');
+  try {
+    const res = await fetch(gasUrl+'?action=getData');
+    const data = await res.json();
+    if (data && data.bprData) {
+      bprData = data.bprData;
+      renderLaporan();
+      alert('Data berhasil diperbarui dari Google Sheets!');
+    }
+  } catch(e) {
+    alert('Gagal memuat data dari Google Sheets. Periksa koneksi dan URL GAS.');
+  }
+}
+
+// ===================== INIT =====================
+initGasBanner();
+populateBPRSelect();
+renderDashboard();
+setInterval(updateCountdown, 1000);
+updateCountdown();
+</script>
+</body>
+</html>
